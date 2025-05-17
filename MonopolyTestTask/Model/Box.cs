@@ -1,4 +1,6 @@
-﻿namespace MonopolyTestTask.Model
+﻿using CommunityToolkit.Diagnostics;
+
+namespace MonopolyTestTask.Model
 {
     public record Box
     {
@@ -22,7 +24,7 @@
             )
         {
             if (productionDate == null && expirationDate == null)
-                throw new ArgumentNullException();
+                throw new ArgumentNullException("Production date or expiration date have to have value");
             else if (productionDate != null) 
             {
                 ProductionDate = productionDate;
@@ -30,6 +32,12 @@
             }
             else
                 ExpirationDate = expirationDate!.Value;
+
+            Guard.IsGreaterThan(width, 0);
+            Guard.IsGreaterThan(height, 0);
+            Guard.IsGreaterThan(depth, 0);
+            Guard.IsGreaterThan(weight, 0);
+
             Id = id;
             Width = width;
             Height = height;

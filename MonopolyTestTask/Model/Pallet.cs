@@ -1,8 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿using CommunityToolkit.Diagnostics;
+using System.Collections.Immutable;
 
 namespace MonopolyTestTask.Model
 {
-    public class Pallet
+    public record Pallet
     {
         private const double emptyWeight = 30;
         public int Id { get; }
@@ -18,22 +19,28 @@ namespace MonopolyTestTask.Model
             double width,
             double height,
             double depth,
-            IEnumerable<Box> boxes
-            )
+            ICollection<Box> boxes
+        )
         {
-            //Assuming empty pallet is an error
-            if (boxes?.Any(_box => _box != null) == false)
-                throw new ArgumentNullException("Pallet must contain some boxes");
-            Boxes = boxes!.ToImmutableList();
-            var largeBoxes = Boxes
-                .Where(_box => _box.Width > width || _box.Depth > depth)
-                .Select(_box => _box.Id.ToString());
-            if (largeBoxes.Any())
-                throw new ArgumentException($"Boxes {String.Join(", ", largeBoxes)} are too large for pallet {id}");
+            Guard.IsNotEmpty(boxes);
+            Guard.IsGreaterThan(width, 0);
+            Guard.IsGreaterThan(height, 0);
+            Guard.IsGreaterThan(depth, 0);
+
+            Boxes = boxes.ToImmutableList();
+            Boxes
+                .ForEach(_box =>
+                    {
+                        Guard.IsLessThanOrEqualTo(_box.Width, width);
+                        Guard.IsLessThanOrEqualTo(_box.Depth, depth);
+                    }
+                );
+
             Id = id;
             Width = width;
             Height = height;
             Depth = depth;
+
             Weight = Boxes.Sum(_=>_.Weight) + emptyWeight;
             Volume = Boxes.Sum(_ => _.Volume) + Width * Height * Depth;
             ExpirationDate = Boxes.Max(_box => _box.ExpirationDate);
