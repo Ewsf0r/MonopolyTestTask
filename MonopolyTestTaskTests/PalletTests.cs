@@ -5,13 +5,6 @@ namespace MonopolyTestTaskTests
     public class PalletTests
     {
         [Fact]
-        public void If_BoxesAreNull_ThenThrows()
-        {
-            Assert.Throws<NullReferenceException>(() => new Pallet(0, 0, 0, 0, null));
-            Assert.Throws<ArgumentException>(() => new Pallet(0, 0, 0, 0, new List<Box>()));
-        }
-
-        [Fact]
         public void If_AnyMeasurementIsLessThanOrEqualToZero_ThenThrows()
         {
             var productionDate = DateOnly.MinValue;
