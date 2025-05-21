@@ -1,12 +1,13 @@
 ﻿using Microsoft.Data.Sqlite;
 using MonopolyTestTask.Interface;
+using MonopolyTestTask.Model;
 using System.Text;
 
-namespace MonopolyTestTask.Model
+namespace MonopolyTestTask.Implementation
 {
     public class WarehousesDBConnector: IDisposable, IWarehouseDBConnector
     {
-        private static readonly string DbPath = AppContext.BaseDirectory + "Data/Warehouses.db";
+        private static readonly string DbPath = AppContext.BaseDirectory + "Data/Warehouse.db";
 
         private static readonly string PalletTableName = nameof(Pallet).ToLower();
         private static readonly string PalletId = nameof(Pallet.Id).ToLower();

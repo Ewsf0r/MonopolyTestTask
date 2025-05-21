@@ -1,6 +1,9 @@
-﻿namespace MonopolyTestTask.Interface
+﻿using MonopolyTestTask.Model;
+
+namespace MonopolyTestTask.Interface
 {
-    internal interface IWarehouseGenerator
+    public interface IWarehouseGenerator
     {
+        Warehouse Generate(int maxRandomNumber, int palletsCount, int minBoxesCountPerPallet, int maxBoxesCountPerPallet);
     }
 }
