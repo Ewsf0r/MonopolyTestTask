@@ -11,7 +11,7 @@ namespace MonopolyTestTask.Model
         public double Depth { get; }
         public double Weight { get; private set; }
         public double Volume { get; private set; }
-        public DateOnly ExpirationDate { get; private set; }
+        public DateOnly? ExpirationDate { get; private set; }
         public List<Box> Boxes { get; }
         public Pallet(
             int id,
@@ -35,7 +35,11 @@ namespace MonopolyTestTask.Model
                             Guard.IsLessThanOrEqualTo(_box.Depth, depth);
                         }
                     );
+
+                ExpirationDate = Boxes.Min(_box => _box.ExpirationDate);
             }
+            else
+                ExpirationDate = null;
 
             Id = id;
             Width = width;
@@ -44,7 +48,6 @@ namespace MonopolyTestTask.Model
 
             Weight = Boxes.Sum(_=>_.Weight) + emptyWeight;
             Volume = Boxes.Sum(_ => _.Volume) + Width * Height * Depth;
-            ExpirationDate = Boxes.Min(_box => _box.ExpirationDate);
         }
 
         public void AddBox(Box box)
@@ -52,7 +55,7 @@ namespace MonopolyTestTask.Model
             Guard.IsLessThanOrEqualTo(box.Width, Width);
             Guard.IsLessThanOrEqualTo(box.Depth, Depth);
             Boxes.Add(box);
-            if (box.ExpirationDate < ExpirationDate)
+            if (ExpirationDate == null || box.ExpirationDate < ExpirationDate)
                 ExpirationDate = box.ExpirationDate;
             Weight += box.Weight;
             Volume += box.Volume;

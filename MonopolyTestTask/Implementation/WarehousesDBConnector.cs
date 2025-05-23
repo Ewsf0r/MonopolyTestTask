@@ -99,16 +99,16 @@ namespace MonopolyTestTask.Implementation
                 $"{PalletId}, " +
                 $"{PalletWidth}, " +
                 $"{PalletHeight}, " +
-                $"{PalletDepth}, " +
+                $"{PalletDepth}" +
                 $") VALUES ");
             var pallets = _warehouse.Pallets;
             foreach (var pallet in pallets)
             {
                 executionStrBuilder.Append(
                     $"(" +
-                    $"{pallet.Id}" +
-                    $"{pallet.Width}" +
-                    $"{pallet.Height}" +
+                    $"{pallet.Id}, " +
+                    $"{pallet.Width}, " +
+                    $"{pallet.Height}, " +
                     $"{pallet.Depth}" +
                     $"), ");
             }
@@ -130,20 +130,25 @@ namespace MonopolyTestTask.Implementation
                     $"{BoxWeight}, " +
                     $"{BoxProductionDate}, " +
                     $"{BoxExpirationDate}, " +
+                    $"{BoxForeignKey}" +
                     $") VALUES ");
 
                 var boxes = pallet.Boxes;
                 foreach (var box in boxes)
                 {
+                    var nullableProductionDateString = box.ProductionDate.HasValue ?
+                        $"'{box.ProductionDate}'" :
+                        "NULL";
                     executionStrBuilder.Append(
                         $"(" +
-                        $"{box.Id}" +
-                        $"{box.Width}" +
-                        $"{box.Height}" +
-                        $"{box.Depth}" +
-                        $"{box.Weight}" +
-                        $"{box.ProductionDate}" +
-                        $"{box.ExpirationDate}" +
+                        $"{box.Id}, " +
+                        $"{box.Width}, " +
+                        $"{box.Height}, " +
+                        $"{box.Depth}, " +
+                        $"{box.Weight}, " +
+                        $"{nullableProductionDateString}, " +
+                        $"'{box.ExpirationDate}', " +
+                        $"{pallet.Id}" +
                         $"), ");
                 }
                 executionStrBuilder.Remove(executionStrBuilder.Length - 2, 2);
@@ -158,11 +163,11 @@ namespace MonopolyTestTask.Implementation
         public async Task<Warehouse?> LoadWarehoseAsync(CancellationToken cancel)
         {
             var executionStr = 
-                $"SELECT (" +
+                $"SELECT " +
                 $"{PalletId}, " +
                 $"{PalletWidth}, " +
                 $"{PalletHeight}, " +
-                $"{PalletDepth}) " +
+                $"{PalletDepth} " +
                 $"FROM {PalletTableName};";
 
             using var command = _connection.CreateCommand();
@@ -180,26 +185,27 @@ namespace MonopolyTestTask.Implementation
             while (await reader.ReadAsync(cancel))
             {
                 var pallet = new Pallet(
-                    id: (int)reader[PalletId],
+                    id: reader.GetInt32(0),
                     width: (double)reader[PalletWidth],
                     height: (double)reader[PalletWidth],
                     depth: (double)reader[PalletDepth],
                     boxes: new List<Box>());
+                pallets.Add(pallet);
             }
+            reader.Close();
             reader.Dispose();
 
             foreach (var pallet in pallets) 
             {
                 executionStr =
-                    $"SELECT (" +
+                    $"SELECT " +
                     $"{BoxId}, " +
                     $"{BoxWidth}, " +
                     $"{BoxHeight}, " +
                     $"{BoxDepth}, " +
                     $"{BoxWeight}, " +
                     $"{BoxProductionDate}, " +
-                    $"{BoxExpirationDate}, " +
-                    $") " +
+                    $"{BoxExpirationDate} " +
                     $"FROM {BoxTableName} " +
                     $"WHERE {BoxForeignKey} = {pallet.Id};";
 
@@ -208,8 +214,7 @@ namespace MonopolyTestTask.Implementation
 
                 if (!reader.HasRows)
                 {
-                    Console.WriteLine($"No warehouse");
-                    await _connection.CloseAsync();
+                    Console.WriteLine($"No boxes");
                     return null;
                 }
 
@@ -217,7 +222,7 @@ namespace MonopolyTestTask.Implementation
                 while (await reader.ReadAsync(cancel))
                 {
                     var box = new Box(
-                        id: (int)reader[BoxId],
+                        id: reader.GetInt32(0),
                         width: (double)reader[BoxWidth],
                         height: (double)reader[BoxHeight],
                         depth: (double)reader[BoxDepth],
@@ -227,6 +232,8 @@ namespace MonopolyTestTask.Implementation
                     boxes.Add(box);
                 }
                 pallet.AddManyBoxes(boxes);
+                reader.Close();
+                reader.Dispose();
             }
 
             var warehose = new Warehouse(pallets);
@@ -235,6 +242,9 @@ namespace MonopolyTestTask.Implementation
 
         private DateOnly? GetNullableDateOnlyFromReader(object readerField)
         {
+            var type = readerField.GetType();
+            if (type == typeof(DBNull))
+                return null;
             var str = (string?)readerField;
             DateOnly? result = string.IsNullOrEmpty(str) ? null : DateOnly.Parse(str);
             return result;
